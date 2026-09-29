@@ -1,0 +1,14 @@
+{
+  "name": "live-room-lineup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "直播间排品脚本与商品挂链审核系统（演示）",
+  "scripts": {
+    "start": "node --no-warnings --experimental-sqlite src/server.js",
+    "demo": "node --no-warnings --experimental-sqlite src/demo.js",
+    "test": "node --no-warnings --experimental-sqlite --test"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

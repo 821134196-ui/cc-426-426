@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>直播间排品 · 挂链审核系统</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <span class="brand-name">珊瑚排品台</span>
+    <span class="brand-sub">直播脚本 · 挂链审核</span>
+  </div>
+  <div class="top-right">
+    <label class="actor-pick">当前身份
+      <select id="actorSelect"></select>
+    </label>
+    <button id="publishBtn" class="btn-publish" title="发布前校验整场挂链">发布场次</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-head">直播间 / 场次</div>
+    <div id="roomList" class="room-list"></div>
+    <div class="side-head">操作</div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="lineup" class="tab active">场次编排</button>
+      <button data-tab="catalog" class="tab">商品审核</button>
+      <button data-tab="samples" class="tab">样品登记</button>
+      <button data-tab="receipts" class="tab">发布回执</button>
+    </nav>
+    <div class="side-tip" id="sideTip"></div>
+  </aside>
+
+  <main class="main">
+    <!-- 场次编排：横向时间轴 -->
+    <section id="tab-lineup" class="tab-panel active">
+      <div class="panel-head">
+        <div>
+          <h2 id="sessionTitle">请选择场次</h2>
+          <div class="session-meta" id="sessionMeta"></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn ghost" id="checkBtn">挂链检查</button>
+          <button class="btn ghost" id="startBtn">开播</button>
+          <button class="btn ghost" id="endBtn">结束场次</button>
+        </div>
+      </div>
+
+      <div id="checkBanner" class="banner hidden"></div>
+
+      <div class="timeline-wrap">
+        <div class="timeline" id="timeline"></div>
+        <div class="timeline-add" id="addSlotCard">
+          <div class="add-card-inner">＋<span>加入排品</span></div>
+        </div>
+      </div>
+
+      <div class="removed-bar" id="removedBar"></div>
+
+      <!-- 脚本编辑 + 审核提示 双栏 -->
+      <div class="editor-block" id="editorBlock">
+        <div class="editor-col">
+          <div class="editor-head">
+            <h3>讲解脚本</h3>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="version-tag" id="scriptVersion"></div>
+              <button class="btn reject" id="pullBtn" style="padding:5px 12px;font-size:12px">临时撤品</button>
+            </div>
+          </div>
+          <textarea id="scriptArea" placeholder="点击上方商品卡，在此编写讲解脚本。每次保存都会生成一个新版本。"></textarea>
+          <div class="editor-row">
+            <input id="changeNote" class="note-input" placeholder="版本说明，如：补充赠品口播">
+            <button class="btn" id="saveScriptBtn">保存新版本</button>
+          </div>
+          <div class="version-history" id="versionHistory"></div>
+        </div>
+        <div class="review-col">
+          <div class="editor-head"><h3>审核提示</h3><span class="live-dot">实时同步</span></div>
+          <div id="reviewTips" class="review-tips muted">选择商品卡后展示。</div>
+          <div class="review-actions">
+            <select id="reviewerSelect"></select>
+            <button class="btn approve" id="approveBtn">审核通过</button>
+            <button class="btn reject" id="rejectBtn">驳回</button>
+          </div>
+          <div class="review-log" id="reviewLog"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 商品审核 -->
+    <section id="tab-catalog" class="tab-panel">
+      <div class="panel-head"><h2>商品库 · 资料审核</h2>
+        <div class="hint">商品、主播、价格为演示适配器数据；商品必须先通过资料审核才能加入排品。</div>
+      </div>
+      <div class="catalog-grid" id="catalogGrid"></div>
+    </section>
+
+    <!-- 样品登记 -->
+    <section id="tab-samples" class="tab-panel">
+      <div class="panel-head"><h2>样品登记</h2>
+        <div class="hint">照片保存在本地 data/photos 目录；样品不符会阻断发布并触发撤品建议。</div>
+      </div>
+      <div class="sample-form card-cream">
+        <select id="sampleSku"></select>
+        <label class="checkline"><input type="radio" name="sampleMatch" value="1" checked> 与详情一致</label>
+        <label class="checkline"><input type="radio" name="sampleMatch" value="0"> 样品不符</label>
+        <input id="sampleNote" class="note-input grow" placeholder="不符说明：色差/配件缺失/吊牌问题…">
+        <input type="file" id="samplePhoto" accept="image/*">
+        <button class="btn" id="sampleSubmit">登记样品</button>
+      </div>
+      <div class="sample-list" id="sampleList"></div>
+    </section>
+
+    <!-- 回执 -->
+    <section id="tab-receipts" class="tab-panel">
+      <div class="panel-head"><h2>发布 / 撤品 / 回调 回执</h2>
+        <div class="hint">由进程内回执适配器模拟发送至审核中心，重复回调不会产生重复动作。</div>
+      </div>
+      <div id="receiptList" class="receipt-list"></div>
+    </section>
+  </main>
+</div>
+
+<!-- 加入排品弹层 -->
+<div class="modal-mask hidden" id="addModal">
+  <div class="modal">
+    <h3>加入排品</h3>
+    <div class="field"><label>商品（仅展示已过资料审核 / 挂链有效）</label><select id="addSku"></select></div>
+    <div class="field-grid">
+      <div class="field"><label>讲解时长（分钟）</label><input type="number" id="addMinutes" value="10" min="1"></div>
+      <div class="field"><label>库存提示线</label><input type="number" id="addStockAlert" value="20" min="0"></div>
+    </div>
+    <div class="field"><label>优惠版本</label><select id="addPromo"></select></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="addCancel">取消</button>
+      <button class="btn coral" id="addConfirm">确认排品</button>
+    </div>
+  </div>
+</div>
+
+<!-- 回调模拟器 -->
+<div class="cb-dock" id="cbDock">
+  <div class="cb-dock-head">平台回调模拟器 <span class="hint">（选中场次内商品，模拟缺货/改价/链接/上下架）</span></div>
+  <div class="cb-dock-body">
+    <select id="cbSku"></select>
+    <button class="chip" data-cb="stock0">缺货</button>
+    <button class="chip" data-cb="price">改价+10%</button>
+    <button class="chip" data-cb="link">链接失效</button>
+    <button class="chip" data-cb="offline">下架</button>
+    <button class="chip" data-cb="dup">重复回调</button>
+    <button class="chip" data-cb="order">成交一单</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/app.js"></script>
+</body>
+</html>
